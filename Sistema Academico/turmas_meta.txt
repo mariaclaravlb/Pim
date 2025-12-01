@@ -1,0 +1,6 @@
+Matematica1;4
+A1Historia;2
+matematica;2
+maqtematica;1
+historia;1
+teste;1
