@@ -70,7 +70,7 @@ EXPORT int salvar_meta_atividade(const char* atividade_id,
                                  const char* data_lanc){
     if (!atividade_id) return 2;
     ensure_meta_files();
-    /* reescreve registro dessa atividade (idempotente) */
+    
     FILE *fin = fopen("atividades_meta.txt","r");
     FILE *fout = fopen("atividades_meta.new","w");
     if (!fout) { if (fin) fclose(fin); return 2; }
@@ -147,7 +147,7 @@ EXPORT int autenticar(const char* login, const char* senha_informada, char* buff
          if (sscanf(line, "%99[^;];%99[^;];%99[^;];%49[^\n]", lgin, nome, senha_lida, tipo)==4){
             if (strcmp(lgin, login)==0){
                 if (strcmp(senha_lida, senha_informada)==0){
-                    trim(tipo);  // 🔥 limpa antes de devolver
+                    trim(tipo);  
                     strncpy(buffer_tipo, tipo, buffer_tamanho-1);
                     buffer_tipo[buffer_tamanho-1]='\0';
                     fclose(f);
@@ -177,7 +177,7 @@ static int buscar_tipo_usuario(const char* login, char* tipo_out, int tipo_out_s
         char lgin[100], nome[100], senha[100], tipo[50];
         if (sscanf(line,"%99[^;];%99[^;];%99[^;];%49[^\n]", lgin,nome,senha,tipo)==4){
             if (strcmp(lgin,login)==0){
-                trim(tipo);  // 🔥 remove \r, \n, espaços
+                trim(tipo); 
                 if (tipo_out && tipo_out_sz>0){
                     strncpy(tipo_out, tipo, tipo_out_sz-1);
                     tipo_out[tipo_out_sz-1]='\0';
@@ -292,7 +292,7 @@ static int turma_da_atividade(const char* atividade_id, char* turma_out, int tur
 
 EXPORT int criar_turma(const char* id, const char* nome, const char* descricao, const char* professor_login, int capacidade){
     if (!id || !nome || capacidade<1) return 2;
-    /* somente admin ou professor cria; prof vira dono da turma */
+
     if (!(eh_admin(professor_login) || eh_professor(professor_login))) return 2;
 
     FILE *f = fopen("turmas.txt","r");
@@ -337,7 +337,6 @@ EXPORT int listar_turmas(char* buffer, int buffer_size){
    Matrículas
    ========================= */
 
-/* 0=ok, 1=turma lotada, 2=erro/nao existe, 3=duplicado, 4=aluno inexistente, 6=sem permissão */
 EXPORT int matricular_aluno(const char* turma_id, const char* aluno_login, const char* actor_login){
     if (!turma_id || !aluno_login || !actor_login) return 2;
     if (!buscar_tipo_usuario(aluno_login,NULL,0) || !eh_aluno(aluno_login)) return 4;
@@ -426,7 +425,7 @@ EXPORT int listar_turmas_do_aluno(const char* aluno_login, char* buffer, int buf
 
 EXPORT int criar_atividade(const char* id, const char* turma_id, const char* titulo, const char* descricao, const char* prazo, const char* autor_login) {
     if (!id || !turma_id || !titulo || !autor_login) return 2;
-    /* precisa ser admin OU professor dono da turma */
+
     if (!(eh_admin(autor_login) || professor_da_turma(autor_login, turma_id))) return 2;
 
     FILE *f = fopen("atividades.txt","a");
@@ -513,7 +512,6 @@ static int nota_valida(const char* s){
     return 1;
 }
 
-/* 0=ok, 2=erro, 4=aluno inexistente, 5=não matriculado na turma, 6=sem permissão */
 EXPORT int lancar_nota(const char* turma_id, const char* aluno_login, const char* disciplina, const char* nota_str, const char* actor_login){
     if (!turma_id || !aluno_login || !disciplina || !nota_str || !actor_login) return 2;
     if (!eh_admin(actor_login) && !eh_professor(actor_login)) return 6;
@@ -575,14 +573,13 @@ static int qtd_meta_da_turma(const char* turma_id){
         }
     }
     fclose(f);
-    return val; /* -1 se não houver meta */
+    return val; 
 }
 
-/* append seguro ao buffer de saída */
 static int bufcat(char* buffer, int buffer_size, const char* text){
     int cur = (int)strlen(buffer);
     int add = (int)strlen(text);
-    if (cur + add >= buffer_size) return 1; /* overflow */
+    if (cur + add >= buffer_size) return 1; 
     memcpy(buffer + cur, text, add + 1);
     return 0;
 }
@@ -606,10 +603,8 @@ EXPORT int boletim_aluno(const char* aluno_login, char* buffer, int buffer_size)
 
     buffer[0] = '\0';
 
-    /* agregados por turma (dinâmico) */
     AggTurma *aggs = NULL; int aggs_n = 0;
 
-    /* 1) listar todas as notas do aluno (linhas detalhadas) e somar por turma */
     char line[512];
     int any = 0;
     while (fgets(line,sizeof(line),f)){
@@ -622,12 +617,10 @@ EXPORT int boletim_aluno(const char* aluno_login, char* buffer, int buffer_size)
             for (char *p=nota_s; *p; ++p) if (*p==',') *p='.';
             double v = atof(nota_s);
 
-            /* imprime linha detalhada */
             char out[512];
             snprintf(out,sizeof(out), "Turma: %s | Disciplina: %s | Nota: %.2f\n", turma, disc, v);
             if (bufcat(buffer, buffer_size, out)){ fclose(f); free(aggs); return 1; }
 
-            /* agrega por turma */
             int idx = -1;
             for (int i=0;i<aggs_n;i++){
                 if (strcmp(aggs[i].turma, turma)==0){ idx=i; break; }
@@ -654,12 +647,11 @@ EXPORT int boletim_aluno(const char* aluno_login, char* buffer, int buffer_size)
         return 0;
     }
 
-    /* separador */
     if (bufcat(buffer, buffer_size, "-----------------------------\n")){ free(aggs); return 1; }
 
-    /* 2) calcular média por turma usando turmas_meta.txt (fallback: nº de lançamentos) */
+
     for (int i=0;i<aggs_n;i++){
-        int qmeta = qtd_meta_da_turma(aggs[i].turma); /* -1 se não existir */
+        int qmeta = qtd_meta_da_turma(aggs[i].turma); 
         int denom = (qmeta>0 ? qmeta : aggs[i].count);
         if (denom <= 0) denom = aggs[i].count>0 ? aggs[i].count : 1;
 

@@ -188,7 +188,7 @@ def ia_responder(pergunta: str) -> str:
         from openai import OpenAI
         client = OpenAI(api_key=api_key)
         resp = client.chat.completions.create(
-            model="gpt-4o-mini",  # rápido + barato — pode trocar por gpt-4.1 se quiser
+            model="gpt-4o-mini", 
             messages=[
                 {"role": "system", "content": "Você é um assistente educacional simples. Responda de forma clara, breve e em português do Brasil."},
                 {"role": "user", "content": pergunta}
@@ -217,18 +217,15 @@ class App:
 
     def setup_style(self):
         style = ttk.Style()
-        # tema mais moderninho
         try:
             style.theme_use("clam")
         except:
             pass
 
-        # fundo da janela
-        self.root.configure(bg="#e5e7eb")  # cinza clarinho
+        self.root.configure(bg="#e5e7eb") 
 
         style.configure("App.TFrame", background="#e5e7eb")
 
-        # Card padrão (caixinhas brancas)
         style.configure(
             "Card.TFrame",
             background="white",
@@ -236,7 +233,6 @@ class App:
             borderwidth=1
         )
 
-        # Títulos
         style.configure(
             "Title.TLabel",
             font=("Segoe UI", 16, "bold"),
@@ -253,7 +249,6 @@ class App:
             background="#e5e7eb"
         )
 
-        # Botões com um pouco mais de padding
         style.configure("TButton", padding=6)
 
         style.configure(
@@ -310,7 +305,6 @@ class App:
         ttk.Button(btn_frame, text="Registrar (admin apenas)",
                    command=self.registrar_usuario_prompt).pack(side=tk.LEFT)
 
-        # Enter no campo senha já tenta login
         self.senha_entry.bind("<Return>", lambda e: self.tentar_login())
 
 
@@ -375,13 +369,11 @@ class App:
         pan = ttk.Panedwindow(root_frame, orient=tk.HORIZONTAL)
         pan.pack(fill=tk.BOTH, expand=True)
 
-        # Painel esquerdo (menu)
         left = ttk.Frame(pan, style="Card.TFrame", padding=10)
         right = ttk.Frame(pan, style="App.TFrame", padding=(5, 0))
         pan.add(left, weight=1)
         pan.add(right, weight=2)
 
-        # Notebook à direita
         tabs = ttk.Notebook(right)
         tabs.pack(fill=tk.BOTH, expand=True)
 
@@ -398,7 +390,6 @@ class App:
         ia_frame = ttk.Frame(tab_ia, style="Card.TFrame", padding=8)
         ia_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 8))
 
-        # Área de conversa (somente leitura)
         self.ia_log = scrolledtext.ScrolledText(
             ia_frame,
             height=14,
@@ -409,12 +400,10 @@ class App:
         )
         self.ia_log.pack(fill=tk.BOTH, expand=True)
 
-        # Estilos de texto no log
         self.ia_log.tag_configure("user", foreground="#0052cc", font=("Segoe UI", 10, "bold"))
         self.ia_log.tag_configure("ia", foreground="#006600", font=("Segoe UI", 10))
         self.ia_log.tag_configure("system", foreground="#999999", font=("Segoe UI", 8, "italic"))
 
-        # Área de entrada
         ia_in = ttk.Frame(tab_ia, style="App.TFrame")
         ia_in.pack(fill=tk.X, padx=8, pady=(0, 10))
 
@@ -424,10 +413,8 @@ class App:
         btn_enviar_ia = ttk.Button(ia_in, text="Enviar", style="Accent.TButton", command=self.ia_send)
         btn_enviar_ia.pack(side=tk.LEFT, padx=(6, 0))
 
-        # Permitir enviar com ENTER
         self.ia_entry.bind("<Return>", lambda event: self.ia_send())
 
-        # --- Aba Saída ---
         tab_out = ttk.Frame(tabs, style="App.TFrame")
         tabs.add(tab_out, text="📄 Saída / Listagens")
 
@@ -503,22 +490,18 @@ class App:
         pergunta = self.ia_entry.get().strip()
         if not pergunta:
             return
-
-        # Mostra a pergunta do usuário
+        
         self.ia_log.config(state="normal")
         self.ia_log.insert(tk.END, f"Você: {pergunta}\n", "user")
 
-        # Chama a IA
         resp = ia_responder(pergunta)
 
-        # Mostra a resposta da IA
         self.ia_log.insert(tk.END, f"IA: {resp}\n\n", "ia")
         self.ia_log.config(state="disabled")
 
-        # Limpa entrada e rola pro final
         self.ia_entry.delete(0, tk.END)
         self.ia_log.see(tk.END)
-    # ---------- Ações / Diálogos ----------
+
     def logout(self):
         self.current_user = None
         self.root.geometry("")
@@ -542,7 +525,6 @@ class App:
             e.grid(row=i, column=1, sticky="ew", pady=3)
             entradas.append(e)
 
-        # Se for ADMIN, pede também o login do professor responsável
         entry_prof = None
         if tipo_atual == "admin":
             ttk.Label(dialog, text="Login do professor responsável:").grid(
@@ -561,20 +543,17 @@ class App:
              )
                 return
 
-            # define qual login vai ser salvo como professor da turma
             if tipo_atual == "admin":
                 prof_login = (entry_prof.get().strip() if entry_prof else "")
                 if not prof_login:
                     messagebox.showerror("Erro", "Informe o login do professor responsável.")
                     return
             else:
-                # se for professor logado, o professor responsável é o próprio usuário
                 prof_login = login_atual
 
             ok, msg = criar_turma_c(idv, nome, desc, prof_login, int(cap))
 
             if ok:
-                # salva quantidade de atividades do bimestre
                 if not salvar_turma_qtd_atividades_c(idv, int(qtd)):
                     messagebox.showwarning(
                         "Aviso",
@@ -584,7 +563,6 @@ class App:
             if ok:
                 dialog.destroy()
 
-        # botão
         linha_botao = len(campos) + (1 if tipo_atual == "admin" else 0)
         ttk.Button(dialog, text="Criar", command=criar).grid(
             row=linha_botao, column=0, columnspan=2, pady=8
@@ -776,7 +754,7 @@ class App:
                     for ln in f:
                         a = ln.strip().split(";")
                         if len(a)>=3:
-                            meta[a[0]] = (a[1], a[2])  # cod, data
+                            meta[a[0]] = (a[1], a[2]) 
         except:
             pass
 
